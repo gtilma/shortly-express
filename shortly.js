@@ -3,7 +3,6 @@ var session = require('express-session');
 var util = require('./lib/utility');
 var partials = require('express-partials');
 var bodyParser = require('body-parser');
-var bcrypt = require('bcrypt-nodejs')
 
 var db = require('./app/config');
 var Users = require('./app/collections/users');
@@ -23,15 +22,22 @@ app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: true }));
 app.use(express.static(__dirname + '/public'));
 
-
 app.get('/', 
 function(req, res) {
+  // User.lookup(req.body.username, req.body.password, function(found){
+
+  // })
   res.render('index');
 });
 
 app.get('/create', 
 function(req, res) {
   res.render('index');
+});
+
+app.get('/login', 
+function(req, res) {
+  res.render('login');
 });
 
 app.get('/links', 
@@ -75,6 +81,18 @@ function(req, res) {
   });
 });
 
+app.post('/login', 
+function(req, res) {
+  var username = req.body.username,
+      password = req.body.password;
+
+  if (util.checkUser(username, password)) {
+    res.redirect('/');
+  } else {
+    res.send(401);
+  }
+});
+
 /************************************************************/
 // Write your authentication routes here
 /************************************************************/
@@ -100,19 +118,6 @@ function(req, res) {
 // assume the route is a short code and try and handle it here.
 // If the short-code doesn't exist, send the user to '/'
 /************************************************************/
-
-app.post('/login', 
-function(req, res) {
-  // var username = req.body.username;
-  // var password = req.body.password;
-  // db.knex('users')
-  //   .where('username', '=', username)
-  //   .then(function(users){
-  //     if(users['0'] && users['0']['password'] === password){
-  //       res.redirect('/links');
-  //     }
-  //   })
-});
 
 
 
