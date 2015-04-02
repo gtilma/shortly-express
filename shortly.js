@@ -83,7 +83,9 @@ function(req, res) {
   var username = req.body.username,
       password = req.body.password;
 
-  console.log(util.checkUser(username, password));
+  util.checkUser(username, password, function(err, results){
+    
+  });
 
 });
 
