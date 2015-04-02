@@ -3,6 +3,7 @@ var session = require('express-session');
 var util = require('./lib/utility');
 var partials = require('express-partials');
 var bodyParser = require('body-parser');
+var bcrypt = require('bcrypt-nodejs')
 
 var db = require('./app/config');
 var Users = require('./app/collections/users');
@@ -35,6 +36,11 @@ function(req, res) {
 app.get('/login', 
 function(req, res) {
   res.render('login');
+});
+
+app.get('/signup', 
+function(req, res) {
+  res.render('signup');
 });
 
 app.get('/links', 
@@ -78,13 +84,54 @@ function(req, res) {
   });
 });
 
+app.post('/signup',
+function(req, res) {
+  var username = req.body.username,
+      password = req.body.password;
+
+  new User({ username: username }).fetch().then(function(user){
+    if(!user){
+      var user = new User ({
+        username: username,
+        password: password
+      })
+      
+      user.save().then(function(newUser){
+        Users.add(newUser);
+        res.redirect('/');
+      })
+      
+    } else {
+      return res.send(401);
+    }
+  })
+
+});
+
 app.post('/login', 
 function(req, res) {
   var username = req.body.username,
       password = req.body.password;
 
-  util.checkUser(username, password, function(err, results){
-    
+  new User({ username: username }).fetch().then(function(user){
+    if (user) {
+      console.log(user.attributes);
+      bcrypt.compare(password, user.get('password'), function(err, res) {
+        console.log('password:', password)
+        console.log('user.password:', user.get('password'))
+        console.log('err from bcrypt', err)
+        console.log('result from bcrypt', res)
+      });
+      // bcrypt.genSalt(10, function(err, salt){
+      //   bcrypt.hash(password, salt, function(err, hash){
+      //     console.log(model.attributes)
+      //   });
+      // });
+
+      res.redirect('/');
+    } else {
+      res.send(401);
+    }
   });
 
 });

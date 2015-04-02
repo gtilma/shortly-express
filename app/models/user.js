@@ -13,9 +13,20 @@ var User = db.Model.extend({
 
   initialize: function(){
     this.on('creating', function(model, attrs, options){
-      bcrypt.hash(model.get('password'), null, null, function(err, hash){
-        model.set('password', hash);
-      });
+      var pass = model.get('password')
+      var salt = bcrypt.genSaltSync(10);
+      var hash = bcrypt.hashSync(pass, salt);
+      model.set('password', hash);
+
+      // asynchronous callback hell
+      // = = = = = = = = = = = = = =
+      // bcrypt.genSalt(10, function(err, salt){
+        // bcrypt.hash(model.get('password'), null, null, function(err, hash){
+        //   console.log("err", err)
+        //   model.set('password', hash);
+        //   console.log(model.attributes)
+        // });
+      // });
     });
   }
 }, {
