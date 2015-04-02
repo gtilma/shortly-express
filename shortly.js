@@ -24,9 +24,6 @@ app.use(express.static(__dirname + '/public'));
 
 app.get('/', 
 function(req, res) {
-  // User.lookup(req.body.username, req.body.password, function(found){
-
-  // })
   res.render('index');
 });
 
@@ -86,11 +83,8 @@ function(req, res) {
   var username = req.body.username,
       password = req.body.password;
 
-  if (util.checkUser(username, password)) {
-    res.redirect('/');
-  } else {
-    res.send(401);
-  }
+  console.log(util.checkUser(username, password));
+
 });
 
 /************************************************************/
