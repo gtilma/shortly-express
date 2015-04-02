@@ -22,35 +22,41 @@ app.use(bodyParser.json());
 // Parse forms (signup/login)
 app.use(bodyParser.urlencoded({ extended: true }));
 app.use(express.static(__dirname + '/public'));
+// Session IDs
+app.use(session({
+  secret: 'keyboard cat',
+  resave: false,
+  saveUninitialized: true
+}))
 
-app.get('/', 
+app.get('/', util.checkUser, 
 function(req, res) {
   res.render('index');
 });
 
-app.get('/create', 
+app.get('/create', util.checkUser, 
 function(req, res) {
   res.render('index');
 });
 
-app.get('/login', 
+app.get('/login',
 function(req, res) {
   res.render('login');
 });
 
-app.get('/signup', 
+app.get('/signup',
 function(req, res) {
   res.render('signup');
 });
 
-app.get('/links', 
+app.get('/links', util.checkUser,
 function(req, res) {
   Links.reset().fetch().then(function(links) {
     res.send(200, links.models);
   });
 });
 
-app.post('/links', 
+app.post('/links', util.checkUser,
 function(req, res) {
   var uri = req.body.url;
 
@@ -84,6 +90,11 @@ function(req, res) {
   });
 });
 
+
+/************************************************************/
+// Write your authentication routes here
+/************************************************************/
+
 app.post('/signup',
 function(req, res) {
   var username = req.body.username,
@@ -94,18 +105,17 @@ function(req, res) {
       var user = new User ({
         username: username,
         password: password
-      })
-      
+      });
+
       user.save().then(function(newUser){
         Users.add(newUser);
-        res.redirect('/');
-      })
+        util.createSession(req, res, newUser);
+      });
       
     } else {
       return res.send(401);
     }
-  })
-
+  });
 });
 
 app.post('/login', 
@@ -116,53 +126,24 @@ function(req, res) {
   new User({ username: username }).fetch().then(function(user){
     if (user) {
       console.log(user.attributes);
-      bcrypt.compare(password, user.get('password'), function(err, res) {
-        console.log('password:', password)
-        console.log('user.password:', user.get('password'))
-        console.log('err from bcrypt', err)
-        console.log('result from bcrypt', res)
-      });
-      // bcrypt.genSalt(10, function(err, salt){
-      //   bcrypt.hash(password, salt, function(err, hash){
-      //     console.log(model.attributes)
-      //   });
-      // });
-
-      res.redirect('/');
+      var match = bcrypt.compareSync(password, user.get('password'));
+      if (match){
+        util.createSession(req, res, user);
+      } else {
+        res.redirect('/login');
+      }
     } else {
-      res.send(401);
+      res.redirect('/login');
     }
   });
-
 });
 
-/************************************************************/
-// Write your authentication routes here
-/************************************************************/
-
-// get request to /login - gets empty login page
-//  "    "     "  /signup - gets empty login page
-//  "    "     "  /signup - sends signup into to database "      "      "
-
-// post  "     "  /login - send login info to database w/salt through bcrypt
-/*
-  1. salt the pwd
-  2. send pwd to hash
-  3. DB query to SELECT uname & hashed pwd FROM db
-  4. COMPARE:
-    4a. IF exists & pwd okay - redirect to links (user-only links, or all links?)
-    4b. IF exists & pwd NOT okay - shoulder shrug
-    4c. IF !exists - shoulder shrug
-
-*/
 
 /************************************************************/
 // Handle the wildcard route last - if all other routes fail
 // assume the route is a short code and try and handle it here.
 // If the short-code doesn't exist, send the user to '/'
 /************************************************************/
-
-
 
 app.get('/*', function(req, res) {
   new Link({ code: req.params[0] }).fetch().then(function(link) {
