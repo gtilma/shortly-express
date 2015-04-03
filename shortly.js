@@ -22,12 +22,18 @@ app.use(bodyParser.json());
 // Parse forms (signup/login)
 app.use(bodyParser.urlencoded({ extended: true }));
 app.use(express.static(__dirname + '/public'));
-// Session IDs
+// express-session IDs
 app.use(session({
   secret: 'keyboard cat',
   resave: false,
   saveUninitialized: true
 }))
+
+app.get('/logout',
+function(req, res) {
+  req.session.destroy();
+  res.redirect('/login');
+});
 
 app.get('/', util.checkUser, 
 function(req, res) {
@@ -99,6 +105,7 @@ app.post('/signup',
 function(req, res) {
   var username = req.body.username,
       password = req.body.password;
+// if (!username || !password) throw error('Username and password are both required');
 
   new User({ username: username }).fetch().then(function(user){
     if(!user){
