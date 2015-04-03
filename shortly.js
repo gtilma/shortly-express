@@ -1,11 +1,11 @@
 var express = require('express');
 var session = require('express-session');
-var util = require('./lib/utility');
 var partials = require('express-partials');
 var bodyParser = require('body-parser');
-var bcrypt = require('bcrypt-nodejs')
+var bcrypt = require('bcrypt-nodejs');
 
 var db = require('./app/config');
+var util = require('./lib/utility');
 var Users = require('./app/collections/users');
 var User = require('./app/models/user');
 var Links = require('./app/collections/links');
@@ -96,16 +96,10 @@ function(req, res) {
   });
 });
 
-
-/************************************************************/
-// Write your authentication routes here
-/************************************************************/
-
 app.post('/signup',
 function(req, res) {
   var username = req.body.username,
       password = req.body.password;
-// if (!username || !password) throw error('Username and password are both required');
 
   new User({ username: username }).fetch().then(function(user){
     if(!user){
@@ -132,13 +126,13 @@ function(req, res) {
 
   new User({ username: username }).fetch().then(function(user){
     if (user) {
-      console.log(user.attributes);
-      var match = bcrypt.compareSync(password, user.get('password'));
-      if (match){
-        util.createSession(req, res, user);
-      } else {
-        res.redirect('/login');
-      }
+      user.comparePassword(password, function(match) {
+        if (match) {
+          util.createSession(req, res, user);
+        } else {
+          res.redirect('/login');
+        }
+      });
     } else {
       res.redirect('/login');
     }

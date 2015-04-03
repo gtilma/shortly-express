@@ -12,34 +12,22 @@ var User = db.Model.extend({
   },
 
   initialize: function(){
-    this.on('creating', function(model, attrs, options){
-      var pass = model.get('password')
-      var salt = bcrypt.genSaltSync(10);
-      var hash = bcrypt.hashSync(pass, salt);
-      model.set('password', hash);
+    this.on('creating', function(){
+      var encrypt = Promise.promisify(bcrypt.hash);
 
-      // asynchronous callback hell
-      // = = = = = = = = = = = = = =
-      // bcrypt.genSalt(10, function(err, salt){
-        // bcrypt.hash(model.get('password'), null, null, function(err, hash){
-        //   console.log("err", err)
-        //   model.set('password', hash);
-        //   console.log(model.attributes)
-        // });
-      // });
+      return encrypt(this.get('password'), null, null)
+        .bind(this)
+        .then(function(hash) {
+          this.set('password', hash);
+        });
+    });
+  },
+
+  comparePassword: function(inputPassword, callback) {
+    bcrypt.compare(inputPassword, this.get('password'), function(err, match) {
+      callback(match);
     });
   }
-}, {
-
-  login: function(username, password) {
-    if (!username || !password) throw error('Username and password are both required');
-    return new this({username: username.trim()}).fetch({require: true}).tap(function(password) {
-      return bcrypt.compare(user.get('password'), password, function(err, result){
-        if(err) console.log(err);
-      });
-    });
-  }
-
 });
 
 module.exports = User;
